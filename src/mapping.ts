@@ -4,75 +4,67 @@ import {
   AddUserRole,
   MarketItemCreated,
   MarketSale,
-  RemoveUserRole,
-  RoleAdminChanged,
-  RoleGranted,
-  RoleRevoked
+  RemoveUserRole
 } from "../generated/NFTMarket/NFTMarket"
-import { ExampleEntity } from "../generated/schema"
+import { Account, Item } from "../generated/schema"
+import {  NFT as NftContract } from "../generated/NFT/NFT"
 
 export function handleAddUserRole(event: AddUserRole): void {
-  // Entities can be loaded from the store using a string ID; this ID
-  // needs to be unique across all entities of the same type
-  let entity = ExampleEntity.load(event.transaction.from.toHex())
 
-  // Entities only exist after they have been saved to the store;
-  // `null` checks allow to create entities on demand
-  if (!entity) {
-    entity = new ExampleEntity(event.transaction.from.toHex())
-
-    // Entity fields can be set using simple assignments
-    entity.count = BigInt.fromI32(0)
+  let user = Account.load(event.params.account.toHexString());
+  if (!user) {
+    user=new Account(event.params.account.toHexString());
   }
-
-  // BigInt and BigDecimal math are supported
-  entity.count = entity.count + BigInt.fromI32(1)
-
-  // Entity fields can be set based on event parameters
-  entity.account = event.params.account
-  entity.role = event.params.role
-
-  // Entities can be written to the store with `.save()`
-  entity.save()
-
-  // Note: If a handler doesn't require existing field values, it is faster
-  // _not_ to load the entity from the store. Instead, create it fresh with
-  // `new Entity(...)`, set the fields that should be updated and save the
-  // entity back to the store. Fields that were not set or unset remain
-  // unchanged, allowing for partial updates to be applied.
-
-  // It is also possible to access smart contracts from mappings. For
-  // example, the contract that has emitted the event can be connected to
-  // with:
-  //
-  // let contract = Contract.bind(event.address)
-  //
-  // The following functions can then be called on this contract to access
-  // state variables and other data:
-  //
-  // - contract.DEFAULT_ADMIN_ROLE(...)
-  // - contract.MINTER_ROLE(...)
-  // - contract.fetchItemsCreated(...)
-  // - contract.fetchMarketItems(...)
-  // - contract.fetchMyNFTs(...)
-  // - contract.getListingPrice(...)
-  // - contract.getMarketItem(...)
-  // - contract.getRoleAdmin(...)
-  // - contract.hasRole(...)
-  // - contract.isAdmin(...)
-  // - contract.isMinter(...)
-  // - contract.priceOf(...)
-  // - contract.supportsInterface(...)
+  if(!(user.role==='ADMIN')){
+    user.role= event.params.role.toString();
+  }
+  user.save();
 }
 
-export function handleMarketItemCreated(event: MarketItemCreated): void {}
+export function handleMarketItemCreated(event: MarketItemCreated): void {
+  let item = Item.load(event.params.itemId.toString());
+  if (!item) {
+    item = new Item(event.params.itemId.toString());
+    item.tokenID=event.params.tokenId;
+    item.price=event.params.price;
+    item.creator=event.params.seller.toHexString();
+    item.owner=event.params.ContractOwner_.toHexString();
+    item.price=event.params.price;
+    let nftContract=NftContract.bind(event.address);
+    item.contentURI=nftContract.tokenURI(event.params.tokenId);
+  }
+  item.save();
+    
+  let account = Account.load(event.params.seller.toHexString());
+  if (!account) {
+    account = new Account(event.params.seller.toHexString());
+    account.save();
+  }
 
-export function handleMarketSale(event: MarketSale): void {}
+  let account2 = Account.load(event.params.ContractOwner_.toHexString());
+  if (!account2) {
+    account2 = new Account(event.params.ContractOwner_.toHexString());
+    account2.save();
+  }
+
+
+}
+
+export function handleMarketSale(event: MarketSale): void {
+  let item = Item.load(event.params.itemId.toString());
+  if (item) {
+    item.owner=event.params.buyer.toHexString();
+    item.save();
+  }
+  
+    
+  let account = Account.load(event.params.buyer.toHexString());
+  if (!account) {
+    account = new Account(event.params.buyer.toHexString());
+    account.save();
+  }
+}
 
 export function handleRemoveUserRole(event: RemoveUserRole): void {}
 
-export function handleRoleAdminChanged(event: RoleAdminChanged): void {}
 
-export function handleRoleGranted(event: RoleGranted): void {}
-
-export function handleRoleRevoked(event: RoleRevoked): void {}

@@ -1,4 +1,4 @@
-specVersion: 0.0.1
+specVersion: 0.0.2
 schema:
   file: ./schema.graphql
 dataSources:
@@ -8,18 +8,14 @@ dataSources:
     source:
       address: "0x8cB4d41CCc6FDCb7b0f05a59409d0Becd35DC538"
       abi: NFTMarket
+      startBlock: 25420683
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.5
       language: wasm/assemblyscript
       entities:
-        - AddUserRole
-        - MarketItemCreated
-        - MarketSale
-        - RemoveUserRole
-        - RoleAdminChanged
-        - RoleGranted
-        - RoleRevoked
+        - Account
+        - Item
       abis:
         - name: NFTMarket
           file: ./abis/NFTMarket.json
@@ -30,12 +26,27 @@ dataSources:
           handler: handleMarketItemCreated
         - event: MarketSale(indexed uint256,indexed address,indexed uint256,address,address,uint256)
           handler: handleMarketSale
+      file: ./src/mapping.ts
+  - kind: ethereum
+    name: NFT
+    network: mumbai
+    source:
+      address: "0x32320133cecdF0f472774Df0bEFC75eb8de0C315"
+      abi: NFT
+      startBlock: 25420685
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - UserRole
+      abis:
+        - name: NFT
+          file: ./abis/NFT.json
+      eventHandlers:
         - event: RemoveUserRole(indexed address,string)
           handler: handleRemoveUserRole
-        - event: RoleAdminChanged(indexed bytes32,indexed bytes32,indexed bytes32)
-          handler: handleRoleAdminChanged
-        - event: RoleGranted(indexed bytes32,indexed address,indexed address)
-          handler: handleRoleGranted
-        - event: RoleRevoked(indexed bytes32,indexed address,indexed address)
-          handler: handleRoleRevoked
       file: ./src/mapping.ts
+
+
+  
